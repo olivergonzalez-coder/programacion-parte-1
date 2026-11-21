@@ -1,0 +1,13 @@
+CREATE DATABASE IF NOT EXISTS mesa_ayuda;
+
+USE mesa_ayuda;
+
+CREATE TABLE IF NOT EXISTS Tickets (
+    Id INT NOT NULL AUTO_INCREMENT,
+    Titulo VARCHAR(200) NOT NULL,
+    Descripcion TEXT NOT NULL,
+    Categoria VARCHAR(50) NOT NULL,
+    Estado VARCHAR(20) NOT NULL DEFAULT 'Abierto',
+    FechaCreacion DATETIME NOT NULL,
+    PRIMARY KEY (Id)
+);
