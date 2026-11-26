@@ -1,0 +1,25 @@
+Sistema de Mesa de Ayuda
+Descripción
+Aplicación de consola desarrollada en C# para la gestión de tickets de soporte técnico.
+
+Funcionalidades
+Registrar tickets.
+Listar tickets.
+Consultar ticket por ID.
+Cerrar tickets.
+Mostrar estadísticas.
+Requisitos
+Visual Studio 2022
+.NET
+Ejecución
+Clonar el repositorio.
+Abrir la solución en Visual Studio.
+Ejecutar el proyecto.
+Seleccionar una opción del menú.
+Archivos principales
+Program.cs
+Ticket.cs
+hito-0.md
+hito-1.md
+Limitaciones
+Los datos se almacenan únicamente en memoria durante la ejecución del programa.
