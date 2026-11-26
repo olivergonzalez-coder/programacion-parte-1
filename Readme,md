@@ -1,25 +1,42 @@
-Sistema de Mesa de Ayuda
-Descripción
-Aplicación de consola desarrollada en C# para la gestión de tickets de soporte técnico.
+Mesa de Ayuda - Hito 2
+Aplicación web en Blazor Server para gestionar tickets de mesa de ayuda con persistencia en MySQL.
+Tecnologías
+C# / .NET 8 - Blazor Server
+MySQL 8
+ADO.NET con MySqlConnector (sin ORM)
+Bootstrap para la interfaz
+Estructura del proyecto
+Components/Pages/Home.razor - Interfaz principal: crear, editar, filtrar, ver detalle, cerrar y eliminar
+Models/Ticket.cs - Modelo Ticket y Categoria. Validación y reglas de negocio
+Services/TicketService.cs - Acceso a datos con MySQL, consultas parametrizadas
+crear_base_datos.sql - Script para crear la base de datos y las tablas
+appsettings.json - Cadena de conexión
+Requisitos previos
+.NET 8 SDK
+MySQL Server 8 corriendo en localhost
 
-Funcionalidades
-Registrar tickets.
-Listar tickets.
-Consultar ticket por ID.
-Cerrar tickets.
-Mostrar estadísticas.
-Requisitos
-Visual Studio 2022
-.NET
-Ejecución
-Clonar el repositorio.
-Abrir la solución en Visual Studio.
-Ejecutar el proyecto.
-Seleccionar una opción del menú.
-Archivos principales
-Program.cs
-Ticket.cs
-hito-0.md
-hito-1.md
-Limitaciones
-Los datos se almacenan únicamente en memoria durante la ejecución del programa.
+Cómo ejecutar
+Crear la base de datos
+Abre MySQL Workbench o tu cliente de MySQL y ejecuta el script crear_base_datos.sql. 
+Crea la base MesaDeAyudaDB, las tablas Categorias y Tickets e inserta las categorías iniciales.
+Configurar la conexión
+En appsettings.json cambia TU_PASSWORD por tu contraseña de MySQL local.
+La conexión es: Server=localhost;Database=MesaDeAyudaDB;User=root;Password=TU_PASSWORD;
+No se incluyen credenciales reales en el repositorio.
+Ejecutar la appAbre la solución en Visual StudioDale P
+Eliminar ticket con confirmación
+Ver detalle al hacer clic en el título
+Filtrar por estado (Abierto / Cerrado) y por categoría sin modificar datos
+Contadores Total / Abiertos / Cerrados calculados sobre toda la tabla, no sobre el filtro
+Mensaje "No hay coincidencias" cuando el filtro no encuentra nada
+
+Validación y errores
+El modelo rechaza título o descripción vacía o solo con espacios, y categoría sin elegir
+El modelo rechaza cerrar un ticket ya cerrado
+La interfaz muestra el mensaje de error en rojo y no muestra "éxito" cuando algo falla
+Si falla la conexión a la base, se muestra "Error al conectar con la base" y la app no se cae
+Seguridad
+Todas las consultas a MySQL usan parámetros (@t, @d, @c, @id, etc.)
+Nunca se concatena lo que escribe el usuario dentro del SQL, lo que evita inyección SQL
+Persistencia
+Los tickets se guardan en MySQL. Al cerrar y volver a abrir la aplicación, los tickets siguen ahí.

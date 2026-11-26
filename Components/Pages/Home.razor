@@ -1,0 +1,142 @@
+@page "/"
+@rendermode @(new Microsoft.AspNetCore.Components.Web.InteractiveServerRenderMode())
+@using MesaAyuda.Models
+@using MesaAyuda.Services
+@inject TicketService Service
+
+<h3>Mesa de Ayuda - Hito 2</h3>
+
+<p><b>Total:</b> @total | <b>Abiertos:</b> @abiertos | <b>Cerrados:</b> @cerrados</p>
+
+@if (!string.IsNullOrEmpty(mensaje)) { <p style="color:green">@mensaje</p> }
+@if (!string.IsNullOrEmpty(error)) { <p style="color:red">@error</p> }
+
+<h4>@(editando ? "Editar Ticket" : "Nuevo Ticket")</h4>
+<input @bind="titulo" placeholder="Título" class="form-control" />
+<textarea @bind="descripcion" placeholder="Descripción" class="form-control"></textarea>
+<select @bind="categoriaId" class="form-control">
+    <option value="0">-- Elige categoría --</option>
+    @foreach (var c in categorias) { <option value="@c.Id">@c.Nombre</option> }
+</select>
+<br />
+<button class="btn btn-primary" @onclick="Guardar">Guardar</button>
+@if (editando) { <button class="btn btn-secondary" @onclick="CancelarEditar">Cancelar</button> }
+
+<hr />
+
+<label>Filtrar por estado:</label>
+<select @bind="filtroEstado" @bind:after="Cargar">
+    <option value="">Todos</option>
+    <option>Abierto</option>
+    <option>Cerrado</option>
+</select>
+<label>Filtrar por categoría:</label>
+<select @bind="filtroCategoria" @bind:after="Cargar">
+    <option value="0">Todas</option>
+    @foreach (var c in categorias) { <option value="@c.Id">@c.Nombre</option> }
+</select>
+<button class="btn btn-link" @onclick="LimpiarFiltro">Ver todo</button>
+
+@if (tickets.Count == 0) { <p>No hay coincidencias. No se encontró ningún ticket con ese filtro.</p> }
+else
+{
+    <table class="table">
+        <thead><tr><th>ID</th><th>Título</th><th>Categoría</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+            @foreach (var t in tickets)
+            {
+                <tr>
+                    <td>@t.Id</td>
+                    <td><a href="#" @onclick="() => Seleccionar(t)" @onclick:preventDefault>@t.Titulo</a></td>
+                    <td>@t.CategoriaNombre</td>
+                    <td>@t.Estado</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" @onclick="() => EmpezarEditar(t)">Editar</button>
+                        <button class="btn btn-sm btn-success" @onclick="() => CerrarTicket(t)" disabled="@(t.Estado== "Cerrado")">Cerrar</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => PedirConfirmar(t)">Eliminar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (seleccionado != null)
+{
+    <div class="card p-3">
+        <h4>Detalle del ticket @seleccionado.Id</h4>
+        <p><b>Título:</b> @seleccionado.Titulo</p>
+        <p><b>Descripción:</b> @seleccionado.Descripcion</p>
+        <p><b>Categoría:</b> @seleccionado.CategoriaNombre</p>
+        <p><b>Estado:</b> @seleccionado.Estado</p>
+        <p><b>Fecha:</b> @seleccionado.FechaCreacion</p>
+    </div>
+}
+
+@if (ticketAEliminar != null)
+{
+    <div class="alert alert-warning">
+        <p>¿Seguro que quieres eliminar "@ticketAEliminar.Titulo"?</p>
+        <button class="btn btn-danger" @onclick="ConfirmarEliminar">Sí, eliminar</button>
+        <button class="btn btn-secondary" @onclick="() => ticketAEliminar = null">Cancelar</button>
+    </div>
+}
+
+@code {
+    List<Ticket> tickets = new();
+    List<Categoria> categorias = new();
+    Ticket? seleccionado, ticketAEliminar;
+    string titulo = "", descripcion = "", mensaje = "", error = "";
+    int categoriaId, total, abiertos, cerrados;
+    string? filtroEstado;
+    int filtroCategoria;
+    bool editando; int idEditando;
+
+    protected override async Task OnInitializedAsync() { categorias = await Service.GetCategoriasAsync(); await Cargar(); }
+
+    async Task Cargar()
+    {
+        try
+        {
+            error = "";
+            var fCat = filtroCategoria == 0 ? null : (int?)filtroCategoria;
+            var fEst = string.IsNullOrEmpty(filtroEstado) ? null : filtroEstado;
+            tickets = await Service.GetTicketsAsync(fEst, fCat);
+            var c = await Service.GetCantidadesAsync();
+            total = c.total; abiertos = c.abiertos; cerrados = c.cerrados;
+        }
+        catch (Exception ex) { error = "Error al conectar con la base: " + ex.Message; }
+    }
+
+    async Task Guardar()
+    {
+        try
+        {
+            error = ""; mensaje = "";
+            if (editando)
+            {
+                var t = tickets.First(x => x.Id == idEditando);
+                t.Actualizar(titulo, descripcion, categoriaId);
+                await Service.ActualizarAsync(t);
+                mensaje = "Ticket actualizado con éxito.";
+            }
+            else
+            {
+                var nuevo = new Ticket(titulo, descripcion, categoriaId);
+                await Service.CrearAsync(nuevo);
+                mensaje = "Ticket creado con éxito.";
+            }
+            titulo = ""; descripcion = ""; categoriaId = 0; editando = false;
+            await Cargar();
+        }
+        catch (Exception ex) { error = ex.Message; }
+    }
+
+    void Seleccionar(Ticket t) => seleccionado = t;
+    void EmpezarEditar(Ticket t) { editando = true; idEditando = t.Id; titulo = t.Titulo; descripcion = t.Descripcion; categoriaId = t.CategoriaId; seleccionado = t; }
+    void CancelarEditar() { editando = false; titulo = ""; descripcion = ""; }
+    async Task CerrarTicket(Ticket t) { try { await Service.CerrarAsync(t); mensaje = "Ticket cerrado."; await Cargar(); seleccionado = tickets.FirstOrDefault(x => x.Id == t.Id); } catch (Exception ex) { error = ex.Message; } }
+    void PedirConfirmar(Ticket t) => ticketAEliminar = t;
+    async Task ConfirmarEliminar() { if (ticketAEliminar != null) { await Service.EliminarAsync(ticketAEliminar.Id); if (seleccionado?.Id == ticketAEliminar.Id) seleccionado = null; ticketAEliminar = null; mensaje = "Ticket eliminado."; await Cargar(); } }
+    async Task LimpiarFiltro() { filtroEstado = ""; filtroCategoria = 0; await Cargar(); }
+}
